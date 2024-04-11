@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\TelegramApi;
 
-use App\Http\Controllers\Controller;
+
 use App\Http\Controllers\TelegramApi\Types\TelegramCallbackQuery;
 use App\Http\Controllers\TelegramApi\Types\TelegramMessages;
-use App\Traits\TelegramBotTrait;
-use Illuminate\Http\Request;
+
 use TelegramBot\Api\Exception;
 use TelegramBot\Api\Types\CallbackQuery;
 use TelegramBot\Api\Types\Message;

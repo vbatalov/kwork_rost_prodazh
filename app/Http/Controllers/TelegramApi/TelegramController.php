@@ -5,7 +5,7 @@ namespace App\Http\Controllers\TelegramApi;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\TelegramApi\Types\TelegramCommands;
 
-use App\Http\Controllers\TelegramApi\Types\TelegramMessages;
+
 use App\Models\User;
 use Auth;
 use Exception;
@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use TelegramBot\Api\BotApi;
 use TelegramBot\Api\Client;
 use TelegramBot\Api\InvalidArgumentException;
-use TelegramBot\Api\Types\ReplyKeyboardMarkup;
+
 use Throwable;
 
 
@@ -89,7 +89,7 @@ class TelegramController extends Controller
                 Auth::loginUsingId($user->id);
             }
 
-            return $cid;
+            return true;
         }
 
         return trigger_error("Error auth user");
