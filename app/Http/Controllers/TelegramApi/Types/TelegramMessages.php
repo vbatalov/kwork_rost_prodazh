@@ -24,21 +24,34 @@ class TelegramMessages extends TelegramController
         $text = $message->getText();
 
         if ($message->getText() != "/start") {
-            /** @var string $productIdFromString Получаю ID товара из сообщения пользователя */
+            /** @var string $productIdFromString
+             *  Получить ID товара из сообщения пользователя
+             *  if false return getProductIdFromString_Error.blade
+             */
             if ($productIdFromString = $this->getProductIdFromString(string: $text)) {
 
-                /** Если пользователь не в группе */
+                /** Проверка пользователя на участника сообщества
+                 * @param string chatId -> .env -> GROUP_CHAT_ID
+                 * @param string cid -> chat id user telegram
+                 * @return bool
+                 */
                 if (!$this->checkUserForGroupMember(chatId: env("GROUP_CHAT_ID"), cid: $cid)) {
                     $user_not_member = true;
                     return $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.result", compact("productIdFromString", "user_not_member"))->render(), parseMode: "HTML");
                 }
 
+                /** @var mixed $result
+                 *  Запрос на получения карточки по ID, отправленному
+                 *  if false return getCardById_Error.blade
+                 */
                 if ($result = $this->getCardById(id: $productIdFromString)) {
+                    /** @var mixed $result
+                     *  Получение данных с API:Evirma
+                     */
                     if ($result = $this->getAsfInfo(data: $result)) {
-                        print_r($result);
                         $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.result", compact("result", "productIdFromString"))->render(), parseMode: "HTML");
                     } else {
-                        $this->bot->sendMessage(chatId: "$cid", text: "asf info error", parseMode: "HTML");
+                        $this->bot->sendMessage(chatId: "$cid", text: "Error Api", parseMode: "HTML");
                     }
                 } else {
                     $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.getCardById_Error")->render(), parseMode: "HTML");
