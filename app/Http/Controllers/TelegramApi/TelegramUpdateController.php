@@ -29,7 +29,7 @@ class TelegramUpdateController extends TelegramController
                 /** Обработка входящих сообщений */
                 if ($message instanceof Message) {
                     $messageController = new TelegramMessages();
-                    $messageController->run(message: $message);
+                    $messageController->messages_run(message: $message);
                 }
 
             }, function () {

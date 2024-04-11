@@ -20,7 +20,7 @@ class TelegramMessages extends TelegramController
      * @throws Exception
      * @throws InvalidArgumentException
      */
-    public function run(Message $message)
+    public function messages_run(Message $message)
     {
         $cid = $message->getChat()->getId();
         $message_id = $message->getMessageId();
@@ -57,26 +57,33 @@ class TelegramMessages extends TelegramController
                         parseMode: "HTML", replyMarkup: $this->quotaIsOver($productIdFromString));
                 }
 
-                // Запрос на получения карточки по ID
-                if ($result = $this->getCardById(id: $productIdFromString)) {
-                    // Получение данных с API:Evirma
-                    if ($result = $this->getAsfInfo(data: $result)) {
-                        // Убрать одну бесплатную квоту на запрос
-                        auth()->user()->takeAwayOneQuota();
-                        return $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.result", compact("result", "productIdFromString"))->render(), parseMode: "HTML", replyMarkup: $keyboard);
-                    } else {
-                        $this->bot->sendMessage(chatId: "$cid", text: "Error Api", parseMode: "HTML", replyMarkup: $keyboard);
-                    }
-                } else {
-                    // Если по ID ничего не найдено
-                    $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.getCardById_Error")->render(), parseMode: "HTML");
-                }
+                // Получение данных для вывода
+                return $this->getResult($productIdFromString, $cid, $keyboard);
             } else {
                 $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.getProductIdFromString_Error")->render(), parseMode: "HTML", replyMarkup: $keyboard);
             }
         }
 
         return true;
+    }
+
+    /**
+     * @throws Exception
+     * @throws InvalidArgumentException
+     */
+    public function getResult($productIdFromString, $cid, $keyboard)
+    {
+        if ($result = $this->getCardById(id: $productIdFromString)) {
+            // Получение данных с API:Evirma
+            if ($result = $this->getAsfInfo(data: $result)) {
+                // Убрать одну бесплатную квоту на запрос
+                auth()->user()->takeAwayOneQuota();
+                return $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.result", compact("result", "productIdFromString"))->render(), parseMode: "HTML", replyMarkup: $keyboard);
+            } else {
+                return $this->bot->sendMessage(chatId: "$cid", text: "Error Api", parseMode: "HTML", replyMarkup: $keyboard);
+            }
+        }
+        return false;
     }
 
     public function getCardById(string $id)
