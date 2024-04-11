@@ -15,13 +15,13 @@ trait TelegramBotButtonTrait
     #[ArrayShape(['text' => "string", 'callback_data' => "string"])]
     public function confirmAndStart(): array
     {
-        return ['text' => 'Согласиться и продолжить', 'callback_data' => $this->build(method: "navigate", action: MENU)];
+        return ['text' => 'Кнопка клавиатура', 'callback_data' => $this->build(method: "navigate", action: MENU)];
     }
 
     #[ArrayShape(['text' => "string", 'callback_data' => "string"])]
     public function menu(): array
     {
-        return ['text' => 'Главное меню', 'callback_data' => $this->build(method: "navigate", action: MENU)];
+        return ['text' => 'Кнопка инлайн', 'callback_data' => $this->build(method: "navigate", action: MENU)];
     }
 
     /** Настройка уведомлений по сделкам */

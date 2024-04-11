@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use TelegramBot\Api\BotApi;
 use TelegramBot\Api\Client;
 use TelegramBot\Api\InvalidArgumentException;
+use TelegramBot\Api\Types\ReplyKeyboardMarkup;
 use Throwable;
 
 
@@ -79,23 +80,24 @@ class TelegramController extends Controller
     {
         $cid = $this->auth_user($request->post());
 
-        $command = new TelegramCommands();
-        $command->run();
-
         if (Auth::check()) {
             try {
                 $update = new TelegramUpdateController();
                 $update->run();
+
+                $command = new TelegramCommands();
+                $command->run();
             } catch (Throwable $t) {
                 trigger_error($t);
             }
         } else {
             try {
-                $this->bot->sendMessage("$cid", "Вы не авторизованы, нажмите /start");
+//                $this->bot->sendMessage("$cid", "Вы не авторизованы, нажмите /start");
             } catch (InvalidArgumentException | \TelegramBot\Api\Exception $e) {
                 trigger_error($e);
             }
         }
+
 
 
     }
@@ -103,6 +105,8 @@ class TelegramController extends Controller
     private function auth_user($post)
     {
         if (!is_array($post)) $post = json_decode($post, true);
+
+        if (isset($post['channel_post'])) return false;
 
         $cid = null;
 

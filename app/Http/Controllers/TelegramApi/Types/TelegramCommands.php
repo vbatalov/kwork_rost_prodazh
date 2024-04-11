@@ -14,6 +14,7 @@ use TelegramBot\Api\Types\InputMedia\InputMediaPhoto;
 use TelegramBot\Api\Types\Message;
 
 use App\Http\Traits\TelegramBotButtonTrait;
+use TelegramBot\Api\Types\ReplyKeyboardMarkup;
 
 class TelegramCommands extends TelegramController
 {
@@ -44,13 +45,12 @@ class TelegramCommands extends TelegramController
                     Auth::loginUsingId($user->id);
                 }
 
-                $keyboard = new InlineKeyboardMarkup(
+                $keyboard = new InlineKeyboardMarkup(inlineKeyboard: [
                     [
-                        [
-                            $this->confirmAndStart(),
+                        $this->menu(),
 
-                        ],
-                    ]
+                    ],
+                ],
                 );
                 $photo = "https://randomwordgenerator.com/img/picture-generator/57e8d0424a55ad14f1dc8460962e33791c3ad6e04e50744172297cd5974ac0_640.jpg";
 

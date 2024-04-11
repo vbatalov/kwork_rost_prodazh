@@ -26,6 +26,13 @@ class TelegramMessages extends TelegramController
         if ($message->getText() != "/start") {
             /** @var string $productIdFromString Получаю ID товара из сообщения пользователя */
             if ($productIdFromString = $this->getProductIdFromString(string: $text)) {
+
+                /** Если пользователь не в группе */
+                if (!$this->checkUserForGroupMember(chatId: env("GROUP_CHAT_ID"), cid: $cid)) {
+                    $user_not_member = true;
+                    return $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.result", compact("productIdFromString", "user_not_member"))->render(), parseMode: "HTML");
+                }
+
                 if ($result = $this->getCardById(id: $productIdFromString)) {
                     if ($result = $this->getAsfInfo(data: $result)) {
                         print_r($result);
@@ -55,11 +62,14 @@ class TelegramMessages extends TelegramController
                 /** Массив с размерами */
                 $sizes = $data['data']['products'][0]['sizes'];
                 /** Всего размеров у продукта, для вычисления средней цены */
-                $total_sizes = count($sizes);
+                $total_sizes = 0;
                 // Инициализация суммы цен
                 $total_price = 0;
                 foreach ($sizes as $size) {
-                    $total_price = $total_price + $size['price']['product'];
+                    if (isset($size['price']['product'])) {
+                        $total_sizes += 1;
+                        $total_price = $total_price + $size['price']['product'];
+                    }
                 }
 
                 return [
@@ -81,6 +91,25 @@ class TelegramMessages extends TelegramController
         }
 
         return false;
+    }
+
+    public function checkUserForGroupMember(string $chatId, string $cid)
+    {
+
+        try {
+            $getChatMember = $this->bot->getChatMember(chatId: $chatId, userId: $cid);
+            $status = $getChatMember->getStatus();
+
+            if ($status == "left") {
+                return false;
+            }
+
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+
+
     }
 
     private function getProductIdFromString($string): bool|string

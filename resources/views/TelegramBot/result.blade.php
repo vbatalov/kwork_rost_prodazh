@@ -1,5 +1,10 @@
-У лучших товаров, похожих на {{$productIdFromString ?? "XXX"}}
-Конверсия в корзину достигает - {{$result['result']['open_to_cart_percentile'] ?? "XXX"}}
-Конверсия из корзины в заказ достигает - {{$result['result']['cart_to_order_percentile'] ?? "XXX"}}
+У лучших товаров, похожих на ID: {{$productIdFromString ?? "XXX"}}
+
+oopen_to_cart_percent - {{$result['data']['oopen_to_cart_percent'] ?? "XXX"}}
+open_card_to_order_percent - {{$result['data']['open_card_to_order_percent'] ?? "XXX"}}
+cart_to_order_percent - {{$result['data']['cart_to_order_percent'] ?? "XXX"}}
 
 <code>resources/views/TelegramBot/result.blade.php</code>
+@if(isset($user_not_member))
+Подпишитесь на канал, чтобы сделать запрос
+@endif
