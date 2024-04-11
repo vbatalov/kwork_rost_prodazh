@@ -32,74 +32,41 @@ class TelegramController extends Controller
         $this->client = new Client(env("BOT_TOKEN"));
     }
 
-//    public function setCommand()
-//    {
-//        $array = ArrayOfBotCommand::fromResponse(
-//            [
-//                [
-//                    "command" => "start",
-//                    "description" => "Запустить",
-//                ],
-//                [
-//                    "command" => "register",
-//                    "description" => "Зарегистрироваться",
-//                ],
-//                [
-//                    "command" => "restore_access",
-//                    "description" => "Восстановить доступ",
-//                ],
-//                [
-//                    "command" => "support",
-//                    "description" => "Поддержка",
-//                ],
-//
-//            ],
-//        );
-//        try {
-//            $this->bot->setMyCommands($array);
-//            return true;
-//        } catch (HttpException | Exception $e) {
-//            Log::error($e);
-//            return false;
-//        }
-//    }
 
+    /**
+     * @throws \TelegramBot\Api\Exception
+     */
     public function register_bot()
     {
         $this->bot->setWebhook(url: env("BOT_URL"), dropPendingUpdates: true);
         return true;
     }
 
+    /**
+     * @throws \TelegramBot\Api\Exception
+     * @throws InvalidArgumentException
+     */
     public function getWebhookInfo()
     {
-        return print_r($this->bot->getWebhookInfo());
+        return $this->bot->getWebhookInfo();
     }
 
 
     public function handle(Request $request)
     {
-        $cid = $this->auth_user($request->post());
+        $this->auth_user($request->post());
+
+        $command = new TelegramCommands();
+        $command->run();
 
         if (Auth::check()) {
             try {
                 $update = new TelegramUpdateController();
                 $update->run();
-
-                $command = new TelegramCommands();
-                $command->run();
             } catch (Throwable $t) {
                 trigger_error($t);
             }
-        } else {
-            try {
-//                $this->bot->sendMessage("$cid", "Вы не авторизованы, нажмите /start");
-            } catch (InvalidArgumentException | \TelegramBot\Api\Exception $e) {
-                trigger_error($e);
-            }
         }
-
-
-
     }
 
     private function auth_user($post)

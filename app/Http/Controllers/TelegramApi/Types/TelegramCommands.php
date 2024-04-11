@@ -39,19 +39,14 @@ class TelegramCommands extends TelegramController
                             "first_name" => $first_name ?? null,
                             "username" => $username ?? null,
                             "cookie" => "start",
+                            "quota" => env("USER_QUOTA") ?? 1,
                         ]
                     );
 
                     Auth::loginUsingId($user->id);
                 }
 
-                $keyboard = new InlineKeyboardMarkup(inlineKeyboard: [
-                    [
-                        $this->menu(),
-
-                    ],
-                ],
-                );
+                $keyboard = $this->permanentKeyboard();
                 $photo = "https://randomwordgenerator.com/img/picture-generator/57e8d0424a55ad14f1dc8460962e33791c3ad6e04e50744172297cd5974ac0_640.jpg";
 
 

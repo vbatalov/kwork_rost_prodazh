@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('phone')->nullable();
+            $table->integer('quota')->default(1);
             $table->string('email')->unique()->nullable();
 
             $table->rememberToken()->nullable();

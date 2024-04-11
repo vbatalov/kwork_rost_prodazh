@@ -4,6 +4,7 @@ namespace App\Http\Controllers\TelegramApi\Types;
 
 
 use App\Http\Controllers\TelegramApi\TelegramController;
+use App\Http\Traits\TelegramBotButtonTrait;
 use App\Http\Traits\WBApiTrait;
 
 use TelegramBot\Api\Exception;
@@ -13,6 +14,7 @@ use TelegramBot\Api\Types\Message;
 class TelegramMessages extends TelegramController
 {
     use WBApiTrait;
+    use TelegramBotButtonTrait;
 
     /**
      * @throws Exception
@@ -21,43 +23,56 @@ class TelegramMessages extends TelegramController
     public function run(Message $message)
     {
         $cid = $message->getChat()->getId();
+        $message_id = $message->getMessageId();
         $text = $message->getText();
 
+        $keyboard = $this->permanentKeyboard();
+
+        /** Обработка текстовых команд с клавиатуры */
+        if ($text == "Узнать воронку в нише") {
+            $message = view("TelegramBot.start")->render();
+            return $this->bot->sendMessage(chatId: $cid, text: $message, parseMode: "HTML", replyMarkup: $keyboard);
+        }
+        if ($text == "Как это работает") {
+            $message = view("TelegramBot._faq")->render();
+            return $this->bot->sendMessage(chatId: $cid, text: $message, parseMode: "HTML", replyMarkup: $keyboard);
+        }
+        if ($text == "Задать вопрос") {
+            $message = view("TelegramBot._askQuestion")->render();
+            return $this->bot->sendMessage(chatId: $cid, text: $message, parseMode: "HTML", replyMarkup: $this->supportButton());
+        }
+
         if ($message->getText() != "/start") {
-            /** @var string $productIdFromString
-             *  Получить ID товара из сообщения пользователя
-             *  if false return getProductIdFromString_Error.blade
-             */
+
+            //Получить ID товара из сообщения пользователя
             if ($productIdFromString = $this->getProductIdFromString(string: $text)) {
 
-                /** Проверка пользователя на участника сообщества
-                 * @param string chatId -> .env -> GROUP_CHAT_ID
-                 * @param string cid -> chat id user telegram
-                 * @return bool
+                /**
+                 * Проверка пользователя на участника сообщества
+                 * Проверка пользователя на доступную квоту проверок (до подписки)
                  */
-                if (!$this->checkUserForGroupMember(chatId: env("GROUP_CHAT_ID"), cid: $cid)) {
+                if ((!$this->checkUserForGroupMember(chatId: env("GROUP_CHAT_ID"), cid: $cid)) and (auth()->user()->quota == 0)) {
                     $user_not_member = true;
-                    return $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.result", compact("productIdFromString", "user_not_member"))->render(), parseMode: "HTML");
+                    return $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.result", compact("productIdFromString", "user_not_member"))->render(),
+                        parseMode: "HTML", replyMarkup: $this->quotaIsOver($productIdFromString));
                 }
 
-                /** @var mixed $result
-                 *  Запрос на получения карточки по ID, отправленному
-                 *  if false return getCardById_Error.blade
-                 */
+                // Запрос на получения карточки по ID
                 if ($result = $this->getCardById(id: $productIdFromString)) {
-                    /** @var mixed $result
-                     *  Получение данных с API:Evirma
-                     */
+                    // Получение данных с API:Evirma
                     if ($result = $this->getAsfInfo(data: $result)) {
-                        $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.result", compact("result", "productIdFromString"))->render(), parseMode: "HTML");
+                        // Убрать одну бесплатную квоту на запрос
+                        auth()->user()->takeAwayOneQuota();
+                        return $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.result", compact("result", "productIdFromString"))->render(), parseMode: "HTML", replyMarkup: $keyboard);
                     } else {
-                        $this->bot->sendMessage(chatId: "$cid", text: "Error Api", parseMode: "HTML");
+                        $this->bot->sendMessage(chatId: "$cid", text: "Error Api", parseMode: "HTML", replyMarkup: $keyboard);
                     }
                 } else {
+                    // Если по ID ничего не найдено
                     $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.getCardById_Error")->render(), parseMode: "HTML");
                 }
             } else {
-                $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.getProductIdFromString_Error")->render(), parseMode: "HTML");
+                $this->bot->sendMessage(chatId: "$cid", text: view("TelegramBot.getProductIdFromString_Error")->render(), parseMode: "HTML", replyMarkup: $keyboard);
             }
         }
 
@@ -72,12 +87,11 @@ class TelegramMessages extends TelegramController
             if (!empty($data['data']['products'])) {
 
                 $subject_id = $data['data']['products'][0]['subjectId'];
-                /** Массив с размерами */
-                $sizes = $data['data']['products'][0]['sizes'];
-                /** Всего размеров у продукта, для вычисления средней цены */
-                $total_sizes = 0;
-                // Инициализация суммы цен
-                $total_price = 0;
+
+                $sizes = $data['data']['products'][0]['sizes']; // Массив с размерами
+                $total_sizes = 0; // Всего размеров у продукта, для вычисления средней цены
+                $total_price = 0; // Инициализация суммы цен
+
                 foreach ($sizes as $size) {
                     if (isset($size['price']['product'])) {
                         $total_sizes += 1;

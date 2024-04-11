@@ -21,7 +21,23 @@ class User extends Authenticatable
         "first_name",
         "last_name",
         "phone",
+        "quota",
         "email",
     ];
+
+
+    /**
+     * Убрать одну квоту у пользователя
+     * @return void
+     * @var User $user
+     */
+    public function takeAwayOneQuota(): void
+    {
+        $current_quota = auth()->user()->quota;
+
+        if ($current_quota >= 1) {
+            auth()->user()->update(["quota" => $current_quota - 1]);
+        }
+    }
 
 }

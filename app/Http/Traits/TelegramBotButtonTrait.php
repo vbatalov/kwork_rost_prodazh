@@ -2,60 +2,58 @@
 
 namespace App\Http\Traits;
 
-use JetBrains\PhpStorm\ArrayShape;
-use TelegramBot\Api\Types\WebAppData;
 
-const MENU = "menu";
-define("App\Http\Traits\WEB_URL", env("APP_URL"));
+use JetBrains\PhpStorm\Pure;
+use TelegramBot\Api\Types\Inline\InlineKeyboardMarkup;
+use TelegramBot\Api\Types\ReplyKeyboardMarkup;
+
+/**
+ * При изменении текста констант, внести правки
+ * app/Http/Controllers/TelegramApi/Types/TelegramMessages.php
+ */
+const START = "Узнать воронку в нише";
+const HOW_IT_WORK = "Как это работает";
+const ASK_QUESTION = "Задать вопрос";
 
 trait TelegramBotButtonTrait
 {
     use TelegramBotDataBuilderTrait;
 
-    #[ArrayShape(['text' => "string", 'callback_data' => "string"])]
-    public function confirmAndStart(): array
+    #[Pure]
+    public function permanentKeyboard(): ReplyKeyboardMarkup
     {
-        return ['text' => 'Кнопка клавиатура', 'callback_data' => $this->build(method: "navigate", action: MENU)];
-    }
+        return new ReplyKeyboardMarkup(keyboard: [
 
-    #[ArrayShape(['text' => "string", 'callback_data' => "string"])]
-    public function menu(): array
-    {
-        return ['text' => 'Кнопка инлайн', 'callback_data' => $this->build(method: "navigate", action: MENU)];
-    }
-
-    /** Настройка уведомлений по сделкам */
-
-    #[ArrayShape(['text' => "string", 'web_app' => "array"])]
-    public function setupNotification(): array
-    {
-        $user_id = auth()->user()->id;
-        $url = WEB_URL . "setupNotification/user/$user_id";
-        return
             [
-                'text' => 'Настроить уведомления', 'web_app' => [
-                "url" => route("setup-notification.handle", ["user_id" => $user_id])
+                START,
+                HOW_IT_WORK
+            ],
+            [
+                ASK_QUESTION
             ]
-            ];
+
+        ], oneTimeKeyboard: false, resizeKeyboard: true, selective: true, inputFieldPlaceholder: "Отправьте ссылку на товар или ID");
     }
 
-
-    #[ArrayShape(['text' => "string", 'callback_data' => "string"])] public function profile(): array
+    public function supportButton(): InlineKeyboardMarkup
     {
-        return ['text' => 'Мой профиль', 'callback_data' => $this->build(method: "navigate", action: "profile")];
+        return new InlineKeyboardMarkup([
+            [
+                ['text' => "Задать вопрос", 'url' => env("BOT_SUPPORT")]
+            ]
+        ]);
     }
 
-    /** Поддержка */
-    #[ArrayShape(['text' => "string", 'callback_data' => "string"])]
-    public function about_bot(): array
+    public function quotaIsOver(string $subject): InlineKeyboardMarkup
     {
-        return ['text' => 'Что умеет бот?', 'callback_data' => $this->build(method: "navigate", action: "about_bot")];
-    }
-
-    #[ArrayShape(['text' => "string", 'url' => "string"])]
-    public function supportButton(): array
-    {
-        return ['text' => "Задать вопрос", 'url' => "https://t.me/vbatalov"];
+        return new InlineKeyboardMarkup([
+            [
+                ['text' => "Перейти и подписаться", 'url' => env("GROUP_LINK")]
+            ],
+            [
+                ['text' => "Я подписался", 'callback_data' => $this->build(method: "getAsfInfo", subject: $subject)]
+            ]
+        ]);
     }
 
 }
